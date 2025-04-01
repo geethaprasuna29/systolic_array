@@ -1,17 +1,17 @@
 `default_nettype none
 
 module topSystolicArray
-  #(parameter int unsigned N = 4)                             /* Modify this */
+  #(parameter int unsigned N = 16)                             /* Modify this */
   ( input  var logic                      i_clk
   , input  var logic                      i_arst
-
-  , input  var logic [N-1:0][N-1:0][7:0]  i_a
-  , input  var logic [N-1:0][N-1:0][7:0]  i_b
+  , input  var logic                      i_mode
+  , input  var logic [N-1:0][N-1:0][15:0]  i_a
+  , input  var logic [N-1:0][N-1:0][15:0]  i_b
 
   , input  var logic                      i_validInput
 
-  , output var logic [N-1:0][N-1:0][31:0] o_c
-
+  , output var logic [N-1:0][N-1:0][31:0] o_c_real
+  , output var logic [N-1:0][N-1:0][31:0] o_c_imag
   , output var logic                      o_validResult
   );
 
@@ -90,16 +90,16 @@ module topSystolicArray
 
   // {{{ Set-up row and column matrices
 
-  localparam int unsigned PAD = 8*(N-1);
+  localparam int unsigned PAD = 16*(N-1);
   localparam bit [PAD-1:0] APPEND_ZERO = PAD'(0);
 
   // The rows are inputs to the i_a port of PEs in the first column.
   // The columns are inputs to the i_b port of PEs in the first row.
-  logic [N-1:0][(2*N)-2:0][7:0] row_d, row_q;
-  logic [N-1:0][(2*N)-2:0][7:0] col_d, col_q;
+  logic [N-1:0][(2*N)-2:0][15:0] row_d, row_q;
+  logic [N-1:0][(2*N)-2:0][15:0] col_d, col_q;
 
-  logic [N-1:0][N-1:0][7:0] invertedRowElements;
-  logic [N-1:0][N-1:0][7:0] invertedColElements;
+  logic [N-1:0][N-1:0][15:0] invertedRowElements;
+  logic [N-1:0][N-1:0][15:0] invertedColElements;
 
   // When i_validInput is asserted set up the row and col matrices. Else, right
   // shift by 1 element (8 bits) to pass the next inputs to the systolic array.
@@ -118,9 +118,9 @@ module topSystolicArray
 
     always_comb
       if (i_validInput)
-        row_d[i] = {APPEND_ZERO, invertedRowElements[i]} << i*8;
+        row_d[i] = {APPEND_ZERO, invertedRowElements[i]} << i*16;
       else if (counter_q != '0)
-        row_d[i] = row_q[i] >> 8;
+        row_d[i] = row_q[i] >> 16;
       else
         row_d[i] = row_q[i];
 
@@ -140,9 +140,9 @@ module topSystolicArray
 
     always_comb
       if (i_validInput)
-        col_d[i] = {APPEND_ZERO, invertedColElements[i]} << i*8;
+        col_d[i] = {APPEND_ZERO, invertedColElements[i]} << i*16;
       else if (counter_q != '0)
-        col_d[i] = col_q[i] >> 8;
+        col_d[i] = col_q[i] >> 16;
       else
         col_d[i] = col_q[i];
 
@@ -163,13 +163,14 @@ module topSystolicArray
   u_systolicArray
   ( .i_clk
   , .i_arst
-
+  , .i_mode
   , .i_doProcess (doProcess_q)
 
   , .i_row (row_q)
   , .i_col (col_q)
 
-  , .o_c
+  , .o_c_real
+  , .o_c_imag
   );
 endmodule
 

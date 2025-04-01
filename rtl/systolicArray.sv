@@ -17,26 +17,28 @@
 `default_nettype none
 
 module systolicArray
-  #(parameter int unsigned N = 4)
+  #(parameter int unsigned N = 16)
   ( input  var logic                         i_clk
   , input  var logic                         i_arst
 
   , input  var logic                         i_doProcess
+  , input  var logic                         i_mode
 
-  , input  var logic [N-1:0][(2*N)-2:0][7:0] i_row
-  , input  var logic [N-1:0][(2*N)-2:0][7:0] i_col
+  , input  var logic [N-1:0][(2*N)-2:0][15:0] i_row
+  , input  var logic [N-1:0][(2*N)-2:0][15:0] i_col
 
-  , output var logic [N-1:0][N-1:0][31:0]    o_c
+  , output var logic [N-1:0][N-1:0][31:0]    o_c_real
+  , output var logic [N-1:0][N-1:0][31:0]    o_c_imag
   );
 
   /* verilator lint_off UNUSED */
   // Variable used to pass data horizontally between PEs in the same row. The
   // output o_a of one PE is connected to the input i_a of the PE to its right.
-  logic [N-1:0][N:0][7:0] rowInterConnect;
+  logic [N-1:0][N:0][15:0] rowInterConnect;
 
   // Variable used to pass data vertically between PEs in the same column. The
   // output o_b of one PE is connected to the input i_b of the PE below it.
-  logic [N:0][N-1:0][7:0] colInterConnect;
+  logic [N:0][N-1:0][15:0] colInterConnect;
   /* verilator lint_off UNUSED */
 
   for (genvar i = 0; i < N; i++) begin: PerDummyRowColInterconnect
@@ -59,7 +61,7 @@ module systolicArray
       pe u_pe
       ( .i_clk
       , .i_arst
-
+      , .i_mode
       , .i_doProcess
 
       , .i_a (rowInterConnect[i][j])
@@ -67,7 +69,8 @@ module systolicArray
 
       , .o_a (rowInterConnect[i][j+1])
       , .o_b (colInterConnect[i+1][j])
-      , .o_y (o_c[i][j])
+      , .o_y_real (o_c_real[i][j])
+      , .o_y_imag (o_c_imag[i][j])
       );
 
     end: PerCol
