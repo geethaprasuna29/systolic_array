@@ -46,10 +46,10 @@ module topSystolicArray
       counter_q <= counter_d;
 
   always_comb
-    if (doProcess_d == '1)
-      counter_d = counter_q + 1'b1;
-    else
-      counter_d = '0;
+    //if (doProcess_d == '1)
+    counter_d = counter_q + 1'b1;
+    //else
+      //counter_d = '0;
 
   //o_validResult is asserted to signal the end of the matrix multiplication
   // process.
